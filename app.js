@@ -1,6 +1,6 @@
 // ==================== CONFIGURATION ====================
 // À MODIFIER : Mettez l'URL de votre application Streamlit déployée
-const API_URL = 'https://collectedechetscommunemekhe-backend-g8rwkxn8ccsakacdfkkappf.streamlit.app/';  // Remplacez par votre URL
+const API_URL = 'https://collecte-backend.streamlit.app';  // Remplacez par votre URL
 
 const DB_NAME = 'CollecteDechetsDB';
 const DB_VERSION = 1;
