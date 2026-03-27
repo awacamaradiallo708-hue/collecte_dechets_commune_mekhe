@@ -329,33 +329,52 @@
         </div>
         
         <!-- Onglet Points de collecte -->
-        <div id="points" class="tab-content">
-            <div class="card">
-                <h3>📍 Points de collecte</h3>
-                <div id="pointsList">
-                    <p class="text-center text-gray">Aucun point enregistré</p>
-                </div>
-                
-                <div class="form-group">
-                    <label>📍 Latitude</label>
-                    <input type="text" id="pointLat" placeholder="15.121048">
-                </div>
-                
-                <div class="form-group">
-                    <label>📍 Longitude</label>
-                    <input type="text" id="pointLon" placeholder="-16.686826">
-                </div>
-                
-                <div class="form-group">
-                    <label>🎯 Type de point</label>
-                    <select id="pointType">
-                        <option value="collecte1">Point Collecte 1</option>
-                        <option value="collecte2">Point Collecte 2</option>
-                        <option value="decharge1">Passage Décharge 1</option>
-                        <option value="decharge2">Passage Décharge 2</option>
-                        <option value="depot">Dépôt</option>
-                    </select>
-                </div>
+<div id="points" class="tab-content">
+    <div class="card">
+        <h3>📍 Points de collecte</h3>
+        <div id="pointsList">
+            <p class="text-center text-gray">Aucun point enregistré</p>
+        </div>
+        
+        <!-- Bouton pour obtenir la position automatique -->
+        <div class="form-group">
+            <button id="btnGetGPSPosition" class="btn-primary">📍 OBTE NIR MA POSITION ACTUELLE</button>
+        </div>
+        
+        <div class="form-group">
+            <label>📍 Latitude (automatique)</label>
+            <input type="text" id="pointLat" placeholder="15.121048" readonly>
+        </div>
+        
+        <div class="form-group">
+            <label>📍 Longitude (automatique)</label>
+            <input type="text" id="pointLon" placeholder="-16.686826" readonly>
+        </div>
+        
+        <div class="form-group">
+            <label>📡 Précision (mètres)</label>
+            <input type="text" id="pointAccuracy" placeholder="10" readonly>
+        </div>
+        
+        <div class="form-group">
+            <label>🎯 Type de point</label>
+            <select id="pointType">
+                <option value="collecte1">Point Collecte 1</option>
+                <option value="collecte2">Point Collecte 2</option>
+                <option value="decharge1">Passage Décharge 1</option>
+                <option value="decharge2">Passage Décharge 2</option>
+                <option value="depot">Dépôt</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label>📝 Description</label>
+            <textarea id="pointDesc" rows="2" placeholder="Description du point..."></textarea>
+        </div>
+        
+        <button id="btnAjouterPoint" class="btn-primary">📍 AJOUTER CE POINT</button>
+    </div>
+</div></div>
                 
                 <div class="form-group">
                     <label>📝 Description</label>
