@@ -219,37 +219,172 @@ async function exportCSV() {
     showToast("📥 Export CSV terminé", "success");
 }
 
-// ==================== GPS ====================
-function getCurrentPosition() {
-    return new Promise((resolve, reject) => {
-        if (!navigator.geolocation) {
-            reject("GPS non supporté");
-            return;
+// ==================== GPS AUTOMATIQUE ====================
+let gpsWatchId = null;
+let currentPosition = null;
+
+function startGPS() {
+    if (!navigator.geolocation) {
+        showToast("❌ GPS non supporté", "error");
+        return;
+    }
+    
+    showToast("📍 Activation du GPS...", "info");
+    
+    gpsWatchId = navigator.geolocation.watchPosition(
+        (position) => {
+            currentPosition = {
+                lat: position.coords.latitude,
+                lon: position.coords.longitude,
+                accuracy: position.coords.accuracy
+            };
+            
+            // Mettre à jour les champs automatiquement
+            document.getElementById('pointLat').value = currentPosition.lat.toFixed(6);
+            document.getElementById('pointLon').value = currentPosition.lon.toFixed(6);
+            document.getElementById('pointAccuracy').value = currentPosition.accuracy.toFixed(0);
+            
+            // Mettre à jour l'affichage du statut
+            const statusBar = document.getElementById('statusBar');
+            const gpsStatus = document.createElement('span');
+            gpsStatus.id = 'gpsStatus';
+            gpsStatus.innerHTML = `📍 GPS actif (${currentPosition.accuracy.toFixed(0)}m)`;
+            gpsStatus.style.color = '#4CAF50';
+            gpsStatus.style.fontSize = '10px';
+            
+            const existingGPS = document.getElementById('gpsStatus');
+            if (existingGPS) existingGPS.remove();
+            statusBar.appendChild(gpsStatus);
+            
+            showToast(`📍 GPS actif - Précision: ${currentPosition.accuracy.toFixed(0)}m`, "success");
+        },
+        (error) => {
+            console.error("Erreur GPS:", error);
+            showToast(`❌ Erreur GPS: ${error.message}`, "error");
+        },
+        {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0
         }
-        navigator.geolocation.getCurrentPosition(
-            (position) => {
-                resolve({
-                    lat: position.coords.latitude,
-                    lon: position.coords.longitude,
-                    accuracy: position.coords.accuracy
-                });
-            },
-            (error) => reject(error.message),
-            { enableHighAccuracy: true, timeout: 10000 }
-        );
-    });
+    );
 }
 
-async function enregistrerAvecGPS() {
-    try {
-        showToast("📍 Recherche de la position...", "info");
-        const position = await getCurrentPosition();
-        document.getElementById('pointLat').value = position.lat.toFixed(6);
-        document.getElementById('pointLon').value = position.lon.toFixed(6);
-        showToast(`📍 Position enregistrée (précision: ${position.accuracy}m)`, "success");
-    } catch (error) {
-        showToast(`❌ Erreur GPS: ${error}`, "error");
+function stopGPS() {
+    if (gpsWatchId !== null) {
+        navigator.geolocation.clearWatch(gpsWatchId);
+        gpsWatchId = null;
+        const gpsStatus = document.getElementById('gpsStatus');
+        if (gpsStatus) gpsStatus.remove();
+        showToast("📍 GPS désactivé", "info");
     }
+}
+
+// ==================== MODIFICATION DE updatePointsList ====================
+async function updatePointsList() {
+    const collectes = await getAllCollectes();
+    const collecteEnCours = collectes.find(c => !c.synced);
+    const pointsList = document.getElementById('pointsList');
+    
+    if (!collecteEnCours || !collecteEnCours.points || collecteEnCours.points.length === 0) {
+        pointsList.innerHTML = '<p class="text-center text-gray">Aucun point enregistré pour cette collecte</p>';
+        return;
+    }
+    
+    let html = '';
+    for (let i = 0; i < collecteEnCours.points.length; i++) {
+        const p = collecteEnCours.points[i];
+        html += `
+            <div class="point-item">
+                <strong>Point ${i+1}</strong> - ${p.type}<br>
+                📍 ${p.lat.toFixed(6)}, ${p.lon.toFixed(6)}<br>
+                🎯 Précision: ${p.accuracy || 'N/A'} m<br>
+                📝 ${p.description || 'Pas de description'}<br>
+                <small>${new Date(p.heure).toLocaleString()}</small>
+            </div>
+        `;
+    }
+    pointsList.innerHTML = html;
+}
+
+// ==================== MODIFICATION DE ajouterPoint ====================
+async function ajouterPoint() {
+    // Récupérer les coordonnées automatiques
+    const lat = document.getElementById('pointLat').value;
+    const lon = document.getElementById('pointLon').value;
+    const accuracy = document.getElementById('pointAccuracy').value;
+    const type = document.getElementById('pointType').value;
+    const description = document.getElementById('pointDesc').value;
+    
+    if (!lat || !lon) {
+        showToast("❌ Position GPS non disponible. Activez le GPS.", "error");
+        return;
+    }
+    
+    const collectes = await getAllCollectes();
+    const collecteEnCours = collectes.find(c => !c.synced);
+    
+    if (collecteEnCours) {
+        collecteEnCours.points = collecteEnCours.points || [];
+        collecteEnCours.points.push({
+            lat: parseFloat(lat),
+            lon: parseFloat(lon),
+            accuracy: parseFloat(accuracy) || 0,
+            type: type,
+            description: description,
+            heure: new Date().toISOString()
+        });
+        
+        await deleteCollecte(collecteEnCours.id);
+        await saveCollecteLocal(collecteEnCours);
+        
+        showToast(`✅ Point ajouté à la collecte ${type}`, "success");
+    } else {
+        showToast("⚠️ Aucune collecte en cours. Créez d'abord une collecte.", "warning");
+        return;
+    }
+    
+    document.getElementById('pointDesc').value = '';
+    
+    await updatePointsList();
+}
+
+// ==================== MODIFICATION DE initEvents ====================
+function initEvents() {
+    document.getElementById('btnEnregistrer').onclick = enregistrerCollecte;
+    document.getElementById('btnEnregistrerGPS').onclick = () => {
+        if (gpsWatchId === null) {
+            startGPS();
+        } else {
+            stopGPS();
+        }
+    };
+    document.getElementById('btnAjouterPoint').onclick = ajouterPoint;
+    document.getElementById('btnSyncNow').onclick = syncWithServer;
+    document.getElementById('btnExportCSV').onclick = exportCSV;
+    document.getElementById('btnClearAll').onclick = async () => {
+        if (confirm("⚠️ Êtes-vous sûr de vouloir effacer TOUTES les données locales ?")) {
+            await clearAllData();
+            showToast("🗑️ Toutes les données locales ont été effacées", "warning");
+            await updatePendingList();
+            await updateHistoryList();
+            await updatePointsList();
+        }
+    };
+    
+    // Ajouter le bouton GPS
+    const btnGPS = document.getElementById('btnGetGPSPosition');
+    if (btnGPS) {
+        btnGPS.onclick = () => {
+            if (gpsWatchId === null) {
+                startGPS();
+            } else {
+                stopGPS();
+            }
+        };
+    }
+    
+    // ... reste du code inchangé
 }
 
 // ==================== ENREGISTREMENT ====================
