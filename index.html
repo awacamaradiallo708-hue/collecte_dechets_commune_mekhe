@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Collecte Mékhé">
+    <meta name="theme-color" content="#2E7D32">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%232E7D32'/%3E%3Ctext x='50' y='70' font-size='50' text-anchor='middle' fill='white'%3E🗑️%3C/text%3E%3C/svg%3E">
+    <title>Agent Collecte - Mékhé</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: #f5f5f5;
+            padding: 16px;
+            min-height: 100vh;
+        }
+        
+        .app-container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #2E7D32 0%, #1B5E20 100%);
+            padding: 20px;
+            border-radius: 20px;
+            color: white;
+            text-align: center;
+            margin-bottom: 16px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 4px;
+        }
+        
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        .status-bar {
+            background: #e8f5e9;
+            padding: 8px 12px;
+            border-radius: 20px;
+            margin-bottom: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .online {
+            color: #4CAF50;
+        }
+        
+        .offline {
+            color: #f44336;
+        }
+        
+        .sync-badge {
+            background: #FF9800;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        
+        .card h3 {
+            margin-bottom: 16px;
+            color: #333;
+            font-size: 18px;
+        }
+        
+        .form-group {
+            margin-bottom: 16px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 500;
+            color: #555;
+            font-size: 14px;
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            font-size: 16px;
+            font-family: inherit;
+            background: white;
+        }
+        
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #2E7D32;
+        }
+        
+        button {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: 8px;
+        }
+        
+        .btn-primary {
+            background: #2E7D32;
+            color: white;
+        }
+        
+        .btn-primary:active {
+            transform: scale(0.98);
+        }
+        
+        .btn-outline {
+            background: white;
+            color: #2E7D32;
+            border: 1px solid #2E7D32;
+        }
+        
+        .point-item {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 12px;
+            margin-bottom: 8px;
+            border-left: 3px solid #2E7D32;
+        }
+        
+        .point-sync-pending {
+            border-left-color: #FF9800;
+            background: #fff3e0;
+        }
+        
+        .pending-count {
+            background: #fff3e0;
+            padding: 12px;
+            border-radius: 12px;
+            margin-bottom: 16px;
+            text-align: center;
+            font-weight: 500;
+            color: #FF9800;
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            background: white;
+            border-radius: 12px;
+            padding: 4px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .tab {
+            flex: 1;
+            text-align: center;
+            padding: 12px;
+            background: #f0f0f0;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .tab.active {
+            background: #2E7D32;
+            color: white;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .text-center {
+            text-align: center;
+        }
+        
+        .text-gray {
+            color: #999;
+        }
+        
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #333;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 30px;
+            font-size: 14px;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+        
+        .toast.show {
+            opacity: 1;
+        }
+        
+        @media (max-width: 480px) {
+            body {
+                padding: 8px;
+            }
+            .header h1 {
+                font-size: 20px;
+            }
+            .tab {
+                font-size: 12px;
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div class="header">
+            <h1>🗑️ Agent de Collecte</h1>
+            <p>Commune de Mékhé</p>
+        </div>
+        
+        <div class="status-bar" id="statusBar">
+            <span id="connectionStatus">📡 Vérification...</span>
+            <span id="syncStatus"></span>
+        </div>
+        
+        <div class="tabs">
+            <div class="tab active" data-tab="collecte">🚛 Collecte</div>
+            <div class="tab" data-tab="points">📍 Points</div>
+            <div class="tab" data-tab="sync">🔄 Synchro</div>
+            <div class="tab" data-tab="historique">📊 Historique</div>
+        </div>
+        
+        <!-- Onglet Collecte -->
+        <div id="collecte" class="tab-content active">
+            <div class="card">
+                <h3>📝 Nouvelle collecte</h3>
+                
+                <div class="form-group">
+                    <label>📅 Date</label>
+                    <input type="date" id="dateCollecte" value="">
+                </div>
+                
+                <div class="form-group">
+                    <label>📍 Quartier</label>
+                    <select id="quartier">
+                        <option value="NDIOP">NDIOP</option>
+                        <option value="Lébou Est">Lébou Est</option>
+                        <option value="Lébou Ouest">Lébou Ouest</option>
+                        <option value="Ngaye Djitté">Ngaye Djitté</option>
+                        <option value="HLM">HLM</option>
+                        <option value="Mbambara">Mbambara</option>
+                        <option value="Ngaye Diagne">Ngaye Diagne</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>👥 Équipe</label>
+                    <select id="equipe">
+                        <option value="Équipe A">Équipe A</option>
+                        <option value="Équipe B">Équipe B</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>👤 Votre nom</label>
+                    <input type="text" id="agentNom" placeholder="Alioune Diop">
+                </div>
+                
+                <div class="form-group">
+                    <label>📦 Volume Collecte 1 (m³)</label>
+                    <input type="number" id="volume1" step="0.5" placeholder="Volume 1ère collecte">
+                </div>
+                
+                <div class="form-group">
+                    <label>📦 Volume Collecte 2 (m³)</label>
+                    <input type="number" id="volume2" step="0.5" placeholder="Volume 2ème collecte">
+                </div>
+                
+                <div class="form-group">
+                    <label>🕐 Heure départ dépôt</label>
+                    <input type="time" id="heureDepart" value="07:00">
+                </div>
+                
+                <div class="form-group">
+                    <label>🕐 Heure retour dépôt</label>
+                    <input type="time" id="heureRetour" value="14:00">
+                </div>
+                
+                <div class="form-group">
+                    <label>📝 Observations</label>
+                    <textarea id="observations" rows="3" placeholder="Observations..."></textarea>
+                </div>
+                
+                <button id="btnEnregistrer" class="btn-primary">💾 ENREGISTRER</button>
+                <button id="btnEnregistrerGPS" class="btn-outline">📍 ENREGISTRER AVEC GPS</button>
+            </div>
+        </div>
+        
+        <!-- Onglet Points de collecte -->
+        <div id="points" class="tab-content">
+            <div class="card">
+                <h3>📍 Points de collecte</h3>
+                <div id="pointsList">
+                    <p class="text-center text-gray">Aucun point enregistré</p>
+                </div>
+                
+                <div class="form-group">
+                    <label>📍 Latitude</label>
+                    <input type="text" id="pointLat" placeholder="15.121048">
+                </div>
+                
+                <div class="form-group">
+                    <label>📍 Longitude</label>
+                    <input type="text" id="pointLon" placeholder="-16.686826">
+                </div>
+                
+                <div class="form-group">
+                    <label>🎯 Type de point</label>
+                    <select id="pointType">
+                        <option value="collecte1">Point Collecte 1</option>
+                        <option value="collecte2">Point Collecte 2</option>
+                        <option value="decharge1">Passage Décharge 1</option>
+                        <option value="decharge2">Passage Décharge 2</option>
+                        <option value="depot">Dépôt</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>📝 Description</label>
+                    <textarea id="pointDesc" rows="2" placeholder="Description du point..."></textarea>
+                </div>
+                
+                <button id="btnAjouterPoint" class="btn-primary">📍 AJOUTER CE POINT</button>
+            </div>
+        </div>
+        
+        <!-- Onglet Synchronisation -->
+        <div id="sync" class="tab-content">
+            <div class="card">
+                <h3>🔄 Synchronisation</h3>
+                <div id="pendingCount" class="pending-count">📦 En attente: 0 collecte(s)</div>
+                <button id="btnSyncNow" class="btn-primary">🔄 SYNCHRONISER MAINTENANT</button>
+            </div>
+            
+            <div class="card">
+                <h3>📋 Collectes en attente</h3>
+                <div id="pendingList"></div>
+            </div>
+        </div>
+        
+        <!-- Onglet Historique -->
+        <div id="historique" class="tab-content">
+            <div class="card">
+                <h3>📊 Historique local</h3>
+                <div id="historyList"></div>
+                <button id="btnExportCSV" class="btn-outline">📥 EXPORTER EN CSV</button>
+                <button id="btnClearAll" class="btn-outline" style="margin-top:10px;">🗑️ EFFACER L'HISTORIQUE</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="toast" class="toast"></div>
+    
+    <script src="app.js"></script>
+</body>
+</html>
