@@ -2,7 +2,7 @@
     "name": "Agent Collecte Déchets",
     "short_name": "Collecte Mékhé",
     "description": "Application de collecte des déchets - Commune de Mékhé",
-    "start_url": "/",
+    "start_url": "/collecte_dechets_commune_mekhe/",
     "display": "standalone",
     "background_color": "#2E7D32",
     "theme_color": "#2E7D32",
