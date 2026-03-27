@@ -1,17 +1,17 @@
 const CACHE_NAME = 'collecte-cache-v1';
 const urlsToCache = [
-    '/',
-    '/index.html',
-    '/manifest.json',
-    '/app.js',
-    '/icons/icon-72.png',
-    '/icons/icon-96.png',
-    '/icons/icon-128.png',
-    '/icons/icon-144.png',
-    '/icons/icon-152.png',
-    '/icons/icon-192.png',
-    '/icons/icon-384.png',
-    '/icons/icon-512.png'
+    '/collecte_dechets_commune_mekhe/',
+    '/collecte_dechets_commune_mekhe/index.html',
+    '/collecte_dechets_commune_mekhe/manifest.json',
+    '/collecte_dechets_commune_mekhe/app.js',
+    '/collecte_dechets_commune_mekhe/icons/icon-72.png',
+    '/collecte_dechets_commune_mekhe/icons/icon-96.png',
+    '/collecte_dechets_commune_mekhe/icons/icon-128.png',
+    '/collecte_dechets_commune_mekhe/icons/icon-144.png',
+    '/collecte_dechets_commune_mekhe/icons/icon-152.png',
+    '/collecte_dechets_commune_mekhe/icons/icon-192.png',
+    '/collecte_dechets_commune_mekhe/icons/icon-384.png',
+    '/collecte_dechets_commune_mekhe/icons/icon-512.png'
 ];
 
 self.addEventListener('install', event => {
