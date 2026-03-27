@@ -558,26 +558,48 @@ with tab1:
         st.info(f"🟢 Tournée en cours - ID: {st.session_state.tournee_en_cours}")
         st.info(f"📍 Étape: {st.session_state.etape_actuelle}")
 
-# ==================== ONGLET 2 : COLLECTE 1 & DÉCHARGE 1 ====================
-with tab2:
-    st.subheader("📍 COLLECTE 1 - Points de collecte")
-    
-    if not st.session_state.tournee_en_cours:
-        st.warning("⚠️ Veuillez d'abord configurer et démarrer une tournée")
+# ==================== SECTION DÉCHARGE 1 ====================
+st.markdown("---")
+st.markdown('<div class="decharge-card">🏭 DÉCHARGE 1 - Enregistrez votre passage et le volume déchargé</div>', unsafe_allow_html=True)
+
+# Volume à décharger
+col1, col2 = st.columns(2)
+with col1:
+    volume_decharge1 = st.number_input("📦 Volume déchargé à la décharge 1 (m³)", min_value=0.0, step=0.5, value=0.0, key="volume_decharge1")
+with col2:
+    if st.button("💾 ENREGISTRER VOLUME DÉCHARGE 1", use_container_width=True, key="save_decharge1"):
+        if volume_decharge1 > 0:
+            if enregistrer_volume_decharge(st.session_state.tournee_en_cours, 1, volume_decharge1):
+                st.session_state.volume_collecte1 = volume_decharge1
+                st.success(f"✅ Volume déchargé enregistré: {volume_decharge1:.1f} m³")
+                # Passer directement à l'étape collecte 2
+                st.session_state.etape_actuelle = "collecte2"
+                st.info("📍 Passez maintenant à la COLLECTE 2 - Actualisez la page")
+                st.rerun()
+        else:
+            st.warning("⚠️ Veuillez saisir le volume déchargé")
+
+# Enregistrement GPS du passage à la décharge
+if st.button("📍 ENREGISTRER PASSAGE DÉCHARGE 1 (GPS)", use_container_width=True, key="gps_decharge1"):
+    if st.session_state.gps_actif and st.session_state.position_actuelle:
+        with engine.connect() as conn:
+            conn.execute(text("""
+                INSERT INTO points_arret (tournee_id, heure, type_point, latitude, longitude, description)
+                VALUES (:tid, :heure, 'decharge_1', :lat, :lon, :desc)
+            """), {
+                "tid": st.session_state.tournee_en_cours,
+                "heure": datetime.now(),
+                "lat": st.session_state.position_actuelle["lat"],
+                "lon": st.session_state.position_actuelle["lon"],
+                "desc": f"Passage décharge 1 - Volume: {volume_decharge1:.1f} m³"
+            })
+            conn.commit()
+        st.success("✅ Passage décharge 1 enregistré avec GPS")
+        st.session_state.etape_actuelle = "collecte2"
+        st.info("📍 Passez maintenant à la COLLECTE 2")
+        st.rerun()
     else:
-        # Afficher les horaires de la collecte 1
-        st.markdown(f"""
-        <div class="horaires-box">
-        <strong>⏰ Horaires de la COLLECTE 1 :</strong><br>
-        🗑️ Début: {st.session_state.heure_debut_collecte1.strftime('%H:%M')}<br>
-        🗑️ Fin: {st.session_state.heure_fin_collecte1.strftime('%H:%M')}<br>
-        🏭 Départ décharge 1: {st.session_state.heure_depart_decharge1.strftime('%H:%M')}<br>
-        🏭 Arrivée décharge 1: {st.session_state.heure_arrivee_decharge1.strftime('%H:%M')}<br>
-        🏭 Sortie décharge 1: {st.session_state.heure_sortie_decharge1.strftime('%H:%M')}
-        </div>
-        """, unsafe_allow_html=True)
-        
-        st.markdown('<div class="collecte-card">📍 Enregistrez tous les points d\'arrêt de la COLLECTE 1</div>', unsafe_allow_html=True)
+        st.warning("⚠️ Activez le GPS pour enregistrer la position")
         
         # Formulaire d'ajout de point
         with st.form("form_point1", clear_on_submit=True):
@@ -667,78 +689,67 @@ with tab2:
             else:
                 st.warning("⚠️ Activez le GPS pour enregistrer la position")
 
-# ==================== ONGLET 3 : COLLECTE 2 & DÉCHARGE 2 ====================
-with tab3:
-    st.subheader("📍 COLLECTE 2 - Points de collecte")
-    
-    if not st.session_state.tournee_en_cours:
-        st.warning("⚠️ Veuillez d'abord configurer et démarrer une tournée")
-    elif st.session_state.etape_actuelle not in ["collecte2", "decharge2"]:
-        st.info("ℹ️ Terminez d'abord la COLLECTE 1 et la DÉCHARGE 1")
+# ==================== SECTION DÉCHARGE 2 ====================
+st.markdown("---")
+st.markdown('<div class="decharge-card">🏭 DÉCHARGE 2 - Enregistrez votre passage et le volume déchargé</div>', unsafe_allow_html=True)
+
+# Volume à décharger
+col1, col2 = st.columns(2)
+with col1:
+    volume_decharge2 = st.number_input("📦 Volume déchargé à la décharge 2 (m³)", min_value=0.0, step=0.5, value=0.0, key="volume_decharge2")
+with col2:
+    if st.button("💾 ENREGISTRER VOLUME DÉCHARGE 2", use_container_width=True, key="save_decharge2"):
+        if volume_decharge2 > 0:
+            if enregistrer_volume_decharge(st.session_state.tournee_en_cours, 2, volume_decharge2):
+                st.session_state.volume_collecte2 = volume_decharge2
+                st.success(f"✅ Volume déchargé enregistré: {volume_decharge2:.1f} m³")
+                # Terminer la tournée
+                volume_total = st.session_state.volume_collecte1 + st.session_state.volume_collecte2
+                with engine.connect() as conn:
+                    conn.execute(text("""
+                        UPDATE tournees 
+                        SET volume_m3 = :volume, statut = 'termine'
+                        WHERE id = :tid
+                    """), {"volume": volume_total, "tid": st.session_state.tournee_en_cours})
+                    conn.commit()
+                st.markdown(f'<div class="success-box">✅ Tournée terminée ! Volume total déchargé: {volume_total:.1f} m³</div>', unsafe_allow_html=True)
+                st.balloons()
+                st.session_state.tournee_en_cours = None
+                st.rerun()
+        else:
+            st.warning("⚠️ Veuillez saisir le volume déchargé")
+
+# Enregistrement GPS du passage à la décharge
+if st.button("📍 ENREGISTRER PASSAGE DÉCHARGE 2 (GPS)", use_container_width=True, key="gps_decharge2"):
+    if st.session_state.gps_actif and st.session_state.position_actuelle:
+        with engine.connect() as conn:
+            conn.execute(text("""
+                INSERT INTO points_arret (tournee_id, heure, type_point, latitude, longitude, description)
+                VALUES (:tid, :heure, 'decharge_2', :lat, :lon, :desc)
+            """), {
+                "tid": st.session_state.tournee_en_cours,
+                "heure": datetime.now(),
+                "lat": st.session_state.position_actuelle["lat"],
+                "lon": st.session_state.position_actuelle["lon"],
+                "desc": f"Passage décharge 2 - Volume: {volume_decharge2:.1f} m³"
+            })
+            conn.commit()
+        st.success("✅ Passage décharge 2 enregistré avec GPS")
+        # Terminer la tournée
+        volume_total = st.session_state.volume_collecte1 + st.session_state.volume_collecte2
+        with engine.connect() as conn:
+            conn.execute(text("""
+                UPDATE tournees 
+                SET volume_m3 = :volume, statut = 'termine'
+                WHERE id = :tid
+            """), {"volume": volume_total, "tid": st.session_state.tournee_en_cours})
+            conn.commit()
+        st.markdown(f'<div class="success-box">✅ Tournée terminée ! Volume total déchargé: {volume_total:.1f} m³</div>', unsafe_allow_html=True)
+        st.balloons()
+        st.session_state.tournee_en_cours = None
+        st.rerun()
     else:
-        # Afficher les horaires de la collecte 2
-        st.markdown(f"""
-        <div class="horaires-box">
-        <strong>⏰ Horaires de la COLLECTE 2 :</strong><br>
-        🗑️ Début: {st.session_state.heure_debut_collecte2.strftime('%H:%M')}<br>
-        🗑️ Fin: {st.session_state.heure_fin_collecte2.strftime('%H:%M')}<br>
-        🏭 Départ décharge 2: {st.session_state.heure_depart_decharge2.strftime('%H:%M')}<br>
-        🏭 Arrivée décharge 2: {st.session_state.heure_arrivee_decharge2.strftime('%H:%M')}<br>
-        🏭 Sortie décharge 2: {st.session_state.heure_sortie_decharge2.strftime('%H:%M')}<br>
-        🏁 Retour dépôt: {st.session_state.heure_retour_depot.strftime('%H:%M')}
-        </div>
-        """, unsafe_allow_html=True)
-        
-        st.markdown('<div class="collecte-card">📍 Enregistrez tous les points d\'arrêt de la COLLECTE 2</div>', unsafe_allow_html=True)
-        
-        # Formulaire d'ajout de point
-        with st.form("form_point2", clear_on_submit=True):
-            col1, col2 = st.columns(2)
-            with col1:
-                if st.session_state.gps_actif and st.session_state.position_actuelle:
-                    lat = st.number_input("Latitude", value=st.session_state.position_actuelle["lat"], format="%.6f")
-                    lon = st.number_input("Longitude", value=st.session_state.position_actuelle["lon"], format="%.6f")
-                else:
-                    lat = st.number_input("Latitude", value=15.115000, format="%.6f")
-                    lon = st.number_input("Longitude", value=-16.635000, format="%.6f")
-                st.caption(f"🕐 Heure du point: {datetime.now().strftime('%H:%M:%S')}")
-            with col2:
-                description = st.text_area("Description du point", placeholder="Ex: Devant le marché, place centrale...", height=100)
-            
-            photo_file = st.file_uploader("📸 Photo (optionnel)", type=["jpg", "jpeg", "png"])
-            
-            submitted = st.form_submit_button("✅ AJOUTER CE POINT", use_container_width=True)
-            
-            if submitted:
-                point_data = {
-                    "numero": len(st.session_state.points_collecte2) + 1,
-                    "heure": datetime.now(),
-                    "lat": lat,
-                    "lon": lon,
-                    "description": description,
-                    "photo": photo_file.getvalue() if photo_file else None,
-                    "collecte_numero": 2
-                }
-                if enregistrer_point_collecte(st.session_state.tournee_en_cours, point_data):
-                    st.session_state.points_collecte2.append(point_data)
-                    st.success(f"✅ Point {len(st.session_state.points_collecte2)} ajouté à la COLLECTE 2")
-                    st.rerun()
-        
-        # Afficher les points
-        if st.session_state.points_collecte2:
-            st.markdown("---")
-            st.markdown("### 📋 Points de collecte 2")
-            for p in st.session_state.points_collecte2:
-                st.markdown(f"""
-                <div class="point-card">
-                    <div>
-                        <span class="point-numero">Point {p['numero']}</span>
-                        <strong>{p['heure'].strftime('%H:%M:%S')}</strong>
-                    </div>
-                    <div>📍 {p['lat']:.6f}, {p['lon']:.6f}</div>
-                    <div>📝 {p['description'][:100] if p['description'] else 'Pas de description'}</div>
-                </div>
-                """, unsafe_allow_html=True)
+        st.warning("⚠️ Activez le GPS pour enregistrer la position")
         
         # ==================== SECTION DÉCHARGE 2 ====================
         st.markdown("---")
